@@ -7,6 +7,10 @@ const passport = require('passport');
 
 const keys = require('../../config/keys');
 
+// Load input validation
+const validateRegisterInput = require('../../validation/register');
+const validateLoginInput = require('../../validation/login');
+
 // Load user model
 const User = require('../../models/User');
 
@@ -24,13 +28,20 @@ router.get('/test', (req, res) => {
 // @access Public 
 router.post('/register', async (req, res) => {
     try {
+        const {
+            errors,
+            isValid
+        } = validateRegisterInput(req.body);
+        // Check validation
+        if (!isValid) {
+            return res.status(400).json(errors);
+        };
         const user = await User.findOne({
             email: req.body.email
         });
         if (user) {
-            return res.status(400).json({
-                email: 'Email already exists'
-            });
+            errors.email = 'Email already exists';
+            return res.status(400).json(errors);
         } else {
             const avatar = gravatar.url(req.body.email, {
                 // size
@@ -67,6 +78,14 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', async (req, res) => {
     try {
+        const {
+            errors,
+            isValid
+        } = validateLoginInput(req.body);
+        // Check validation
+        if (!isValid) {
+            return res.status(400).json(errors);
+        };
         const email = req.body.email;
         const password = req.body.password;
 
@@ -75,9 +94,8 @@ router.post('/login', async (req, res) => {
             email
         });
         if (!user) {
-            return res.status(404).json({
-                email: 'User not found'
-            });
+            errors.email = 'User not found'
+            return res.status(404).json(errors);
         };
         // Check password
         const isMatch = await bcrypt.compare(password, user.password);
@@ -99,9 +117,8 @@ router.post('/login', async (req, res) => {
                 });
             });
         } else {
-            res.status(400).json({
-                password: 'Password incorrect'
-            });
+            errors.password = 'Password incorrect';
+            res.status(400).json(errors);
         };
     } catch (err) {
         console.log(err);
