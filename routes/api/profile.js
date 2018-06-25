@@ -3,6 +3,9 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const passport = require('passport');
 
+// load validation
+const validateProfileInput = require('../../validation/profile');
+
 // Load Profile model
 const Profile = require('../../models/Profile');
 // Load User model
@@ -33,6 +36,82 @@ router.get('/', passport.authenticate('jwt', {
             return res.status(404).json(errors);
         };
         res.json(profile);
+    } catch (err) {
+        res.status(404).json(err);
+    };
+});
+
+// @route GET api/profile/test
+// @desc Tests profile route
+// @access Public 
+router.get('/test', (req, res) => {
+    res.json({
+        message: 'Profile works!'
+    });
+});
+
+// @route POST api/profile
+// @desc Create or Update user profile
+// @access Private
+router.post('/', passport.authenticate('jwt', {
+    session: false
+}), async (req, res) => {
+    try {
+        const {
+            errors,
+            isValid
+        } = validateProfileInput(req.body);
+        // check validation
+        if (!isValid) {
+            return res.status(400).json(errors);
+        };
+        // Get all fields from request
+        const profileFields = {};
+        // nenustacius .social={} neranda tokio property ir neleidzia jo setinti kazkam
+        profileFields.social = {};
+        profileFields.user = req.user;
+        const whiteList = ['handle', 'company', 'website', 'bio', 'status', 'githubusername', 'skills', 'youtube', 'twitter', 'instagram', 'facebook', 'linkedin'];
+        const inputData = Object.keys(req.body);
+        for (key of inputData) {
+            if (whiteList.includes(key)) {
+                if (key === 'skills' && typeof req.body.skills !== 'undefined') {
+                    profileFields[key] = req.body.skills.split(',');
+                } else if (['youtube', 'twitter', 'instagram', 'facebook', 'linkedin'].includes(key) && req.body[key]) {
+                    profileFields.social[key] = req.body[key];
+                } else if (req.body[key]) {
+                    profileFields[key] = req.body[key];
+                };
+            };
+        };
+        const profile = await Profile.findOne({
+            user: req.user.id
+        });
+        if (profile) {
+            // Update
+            const updatedProfile = await Profile.findOneAndUpdate({
+                user: req.user.id
+            }, {
+                $set: profileFields
+            }, {
+                new: true
+            });
+            res.json(updatedProfile);
+        } else {
+            // Create
+
+            // Check if handle exists
+            const profile = await Profile.findOne({
+                handle: profileFields.handle
+            });
+            if (profile) {
+                errors.handle = 'That handle already exists';
+                res.status(400).json(errors);
+            };
+
+            // Save profile
+            const newProfile = await new Profile(profileFields).save();
+            res.json(newProfile);
+        };
     } catch (err) {
         res.status(404).json(err);
     };
