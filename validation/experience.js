@@ -15,9 +15,11 @@ module.exports = function validateExperieneInput(data) {
     if (!validator.isISO8601(data.from)) {
         errors.from = 'Please format to YYYY-MM-DD';
     };
-    data.to = isEmpty(data.to) ? 'to' : data.to;
-    if (!validator.isISO8601(data.to)) {
-        errors.to = 'Please format to YYYY-MM-DD'
+    data.to = isEmpty(data.to) ? '' : data.to;
+    if (!validator.isEmpty(data.to)) {
+        if (!validator.isISO8601(data.to)) {
+            errors.to = 'Please format to YYYY-MM-DD'
+        };
     };
     return {
         errors,

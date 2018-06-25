@@ -16,8 +16,10 @@ module.exports = function validateEducationInput(data) {
     errors.from = "Please format to YYYY-MM-DD";
   }
   data.to = isEmpty(data.to) ? '' : data.to;
-  if (!validator.isISO8601(data.to)) {
-    errors.to = "Please format to YYYY-MM-DD";
+  if (!validator.isEmpty(data.to)) {
+    if (!validator.isISO8601(data.to)) {
+      errors.to = "Please format to YYYY-MM-DD";
+    };
   };
   return {
     errors,
