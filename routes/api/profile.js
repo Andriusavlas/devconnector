@@ -281,7 +281,12 @@ router.delete('/experience/:exp_id', passport.authenticate('jwt', {
             user: req.user.id
         });
         // Get remove index
-        const removeIndex = profile.experience.map(item => item._id === req.params.exp_id);
+        const removeIndex = profile.experience.map(item => item._id).indexOf(req.params.exp_id);
+        if (removeIndex === -1) {
+            return res.status(404).json({
+                noexperience: 'No experience with such id found'
+            });
+        };
         // splice out of the array
         profile.experience.splice(removeIndex, 1);
         await profile.save();
@@ -302,13 +307,21 @@ router.delete('/education/:edu_id', passport.authenticate('jwt', {
             user: req.user.id
         });
         // Get remove index
-        const removeIndex = profile.education.map(item => item._id === req.params.edu_id);
+        const removeIndex = profile.education.map(item => item.id).indexOf(req.params.edu_id);
+        if (removeIndex === -1) {
+            return res.status(404).json({
+                noeducation: 'No education with such id found'
+            });
+        };
         // splice out of the array
         profile.education.splice(removeIndex, 1);
         await profile.save();
         res.json(profile);
     } catch (err) {
-        res.status(404).json(err);
+        console.log(err);
+        res.status(404).json({
+            message: 'Incorrectly formated id or problems with server'
+        });
     };
 });
 
