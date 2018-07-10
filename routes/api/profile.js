@@ -142,6 +142,7 @@ router.post(
         "company",
         "website",
         "bio",
+        "location",
         "status",
         "githubusername",
         "skills",
